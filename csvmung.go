@@ -5,11 +5,11 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/hlawrenz/csvmung/filters"
 	"io"
 	"os"
 	"regexp"
 	"strconv"
-	"github.com/hlawrenz/csvmung/filters"
 )
 
 var inputFn string
@@ -25,13 +25,18 @@ func init() {
 }
 
 func readCsv(ch chan []string) {
-	file, err := os.Open(inputFn)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
+	var reader *csv.Reader
+	if inputFn == "" {
+		reader = csv.NewReader(os.Stdin)
+	} else {
+		file, err := os.Open(inputFn)
+		if err != nil {
+			fmt.Println("Error:", err)
+			os.Exit(1)
+		}
+		defer file.Close()
+		reader = csv.NewReader(file)
 	}
-	defer file.Close()
-	reader := csv.NewReader(file)
 
 	for {
 		record, err := reader.Read()
@@ -48,13 +53,18 @@ func readCsv(ch chan []string) {
 }
 
 func writeCsv(ch chan []string) {
-	file, err := os.Create(outputFn)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
+	var writer *csv.Writer
+	if outputFn == "" {
+		writer = csv.NewWriter(os.Stdout)
+	} else {
+		file, err := os.Create(outputFn)
+		if err != nil {
+			fmt.Println("Error:", err)
+			os.Exit(1)
+		}
+		defer file.Close()
+		writer = csv.NewWriter(file)
 	}
-	defer file.Close()
-	writer := csv.NewWriter(file)
 
 	for row := range ch {
 		err := writer.Write(row)
