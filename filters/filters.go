@@ -38,7 +38,7 @@ func (f ColFilterer) Filter(inCh chan []string) chan []string {
 		for row := range inCh {
 			var newRow []string
 			var c interface{}
-			for c = range f.Columns {
+			for _, c = range f.Columns {
 				switch c.(type) {
 				case int:
 					newRow = append(newRow, row[c.(int)])

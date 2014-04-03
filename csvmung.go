@@ -16,12 +16,14 @@ var inputFn string
 var outputFn string
 var inputSep string
 var outputSep string
+var strictLen bool
 
 func init() {
 	flag.StringVar(&inputFn, "i", "", "Input file. STDIN used if unspecified.")
 	flag.StringVar(&outputFn, "o", "", "Output file. STDOUT used if unspecified.")
 	flag.StringVar(&inputSep, "is", ",", "Input separator. Defaults to comma.")
 	flag.StringVar(&outputSep, "os", ",", "Output separator. Defaults to comma.")
+	flag.BoolVar(&strictLen, "strict-len", false, "Different length rows treates as an error.")
 }
 
 func readCsv(ch chan []string) {
@@ -36,6 +38,9 @@ func readCsv(ch chan []string) {
 		}
 		defer file.Close()
 		reader = csv.NewReader(file)
+	}
+	if ! strictLen {
+		reader.FieldsPerRecord = -1
 	}
 
 	for {
@@ -103,8 +108,8 @@ func buildFilters() (f []filters.Filterer, err error) {
 			fs = append(fs, newFilter)
 		case "cols":
 			var cols []interface{}
-			for col := range filterArg[1:] {
-				v, err := strconv.Atoi(filterArg[col])
+			for _, col := range filterArg[1:] {
+				v, err := strconv.Atoi(col)
 				if err != nil {
 					cols = append(cols, col)
 				} else {
