@@ -60,7 +60,13 @@ func (f SplitFilterer) Filter(inCh chan []string) chan []string {
 	outCh := make(chan []string)
 	go func() {
 		for row := range inCh {
-			outCh <- row[0:f.Col] + f.Pattern.Split(row[f.Col], -1) + row[f.Col+1:]
+			split := f.Pattern.Split(row[f.Col], -1)
+			newRowLen := len(split) + len(row) - 1
+			newRow := make([]string, f.Col, newRowLen)
+			copy(newRow, row[0:f.Col])
+			newRow = append(newRow, split...)
+			newRow = append(newRow, row[f.Col+1:]...)
+			outCh <- newRow
 		}
 		close(outCh)
 	}()

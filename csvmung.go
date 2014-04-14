@@ -10,6 +10,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"unicode/utf8"
 )
 
 var inputFn string
@@ -42,7 +43,8 @@ func readCsv(ch chan []string) {
 	if ! strictLen {
 		reader.FieldsPerRecord = -1
 	}
-	reader.Comma = inputSep
+	r, _ := utf8.DecodeRuneInString(inputSep)
+	reader.Comma = r
 
 	for {
 		record, err := reader.Read()
@@ -71,7 +73,9 @@ func writeCsv(ch chan []string) {
 		defer file.Close()
 		writer = csv.NewWriter(file)
 	}
-	writer.Comma = outputSep
+
+	r, _ := utf8.DecodeRuneInString(outputSep)
+	writer.Comma = r
 
 	for row := range ch {
 		err := writer.Write(row)
@@ -100,6 +104,13 @@ func buildFilters() (f []filters.Filterer, err error) {
 				return nil, errors.New("Bad column argument " + filterArg[1])
 			}
 			newFilter := filters.RegexFilterer{column, regexp.MustCompile(filterArg[2])}
+			fs = append(fs, newFilter)
+		case "split":
+			column, err := strconv.Atoi(filterArg[1])
+			if err != nil {
+				return nil, errors.New("Bad column argument " + filterArg[1])
+			}
+			newFilter := filters.SplitFilterer{column, regexp.MustCompile(filterArg[2])}
 			fs = append(fs, newFilter)
 		case "uniq":
 			column, err := strconv.Atoi(filterArg[1])
