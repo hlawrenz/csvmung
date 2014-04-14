@@ -8,26 +8,6 @@ type Filterer interface {
 	Filter(inCh chan []string) chan []string
 }
 
-type UniqFilterer struct {
-	Col int
-}
-
-func (f UniqFilterer) Filter(inCh chan []string) chan []string {
-	outCh := make(chan []string)
-	go func() {
-		seen := make(map[string]int)
-		for row := range inCh {
-			_, present := seen[row[f.Col]]
-			if !present {
-				outCh <- row
-				seen[row[f.Col]] = 1
-			}
-		}
-		close(outCh)
-	}()
-	return outCh
-}
-
 type ColFilterer struct {
 	Columns []interface{}
 }
@@ -70,3 +50,40 @@ func (f RegexFilterer) Filter(inCh chan []string) chan []string {
 	}()
 	return outCh
 }
+
+type SplitFilterer struct {
+	Col     int
+	Pattern *regexp.Regexp
+}
+
+func (f SplitFilterer) Filter(inCh chan []string) chan []string {
+	outCh := make(chan []string)
+	go func() {
+		for row := range inCh {
+			outCh <- row[0:f.Col] + f.Pattern.Split(row[f.Col], -1) + row[f.Col+1:]
+		}
+		close(outCh)
+	}()
+	return outCh
+}
+
+type UniqFilterer struct {
+	Col int
+}
+
+func (f UniqFilterer) Filter(inCh chan []string) chan []string {
+	outCh := make(chan []string)
+	go func() {
+		seen := make(map[string]int)
+		for row := range inCh {
+			_, present := seen[row[f.Col]]
+			if !present {
+				outCh <- row
+				seen[row[f.Col]] = 1
+			}
+		}
+		close(outCh)
+	}()
+	return outCh
+}
+

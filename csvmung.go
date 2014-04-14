@@ -42,6 +42,7 @@ func readCsv(ch chan []string) {
 	if ! strictLen {
 		reader.FieldsPerRecord = -1
 	}
+	reader.Comma = inputSep
 
 	for {
 		record, err := reader.Read()
@@ -70,6 +71,7 @@ func writeCsv(ch chan []string) {
 		defer file.Close()
 		writer = csv.NewWriter(file)
 	}
+	writer.Comma = outputSep
 
 	for row := range ch {
 		err := writer.Write(row)
