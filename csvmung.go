@@ -17,6 +17,7 @@ var inputFn string
 var outputFn string
 var inputSep string
 var outputSep string
+var lazyQuotes bool
 var strictLen bool
 
 func init() {
@@ -24,6 +25,7 @@ func init() {
 	flag.StringVar(&outputFn, "o", "", "Output file. STDOUT used if unspecified.")
 	flag.StringVar(&inputSep, "is", ",", "Input separator. Defaults to comma.")
 	flag.StringVar(&outputSep, "os", ",", "Output separator. Defaults to comma.")
+	flag.BoolVar(&lazyQuotes, "lazy-quote", false, "Allow lazy quotes in input.")
 	flag.BoolVar(&strictLen, "strict-len", false, "Different length rows treates as an error.")
 }
 
@@ -40,11 +42,12 @@ func readCsv(ch chan []string) {
 		defer file.Close()
 		reader = csv.NewReader(file)
 	}
-	if ! strictLen {
+	if !strictLen {
 		reader.FieldsPerRecord = -1
 	}
 	r, _ := utf8.DecodeRuneInString(inputSep)
 	reader.Comma = r
+	reader.LazyQuotes = lazyQuotes
 
 	for {
 		record, err := reader.Read()
